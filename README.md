@@ -1,7 +1,7 @@
 # leetcode-setup
 
 ## cpbuild <filename.cpp>
-In competitive programming, you will inevitably run into "Segmentation Faults" (accessing arrays out of bounds) or weird integer overflows. 
+While solving problems, you will inevitably run into "Segmentation Faults" (accessing arrays out of bounds) or weird integer overflows. 
 
 A "debug" compilation command that catches these errors instantly and tells you exactly which line caused them:
 ```
