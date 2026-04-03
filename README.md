@@ -15,3 +15,6 @@ cpbuild() {
     echo "Compiled $1 -> solution"
 }
 ```
+
+## Inspirations
+- [Benjamin Qi cp-notebook](https://github.com/bqi343/cp-notebook)
