@@ -31,17 +31,19 @@ Test cases are cached in `tests/<number>.json`.
 
 ## Setup
 
-Add to `~/.zshrc`:
+Clone the repo, then add to `~/.zshrc` (replace `<path>` with where you cloned it):
 ```zsh
+export LEETCODE_SETUP="<path>/leetcode-setup"
+
 cpbuild() {
     g++ -std=c++17 -DLOCAL -Wall -Wextra -Wshadow -fsanitize=address -fsanitize=undefined "$1" -o solution
     echo "Compiled $1 -> solution"
 }
 cpgen() {
-    python3 ~/Desktop/source/leetcode-setup/cpgen.py "$1"
+    python3 "$LEETCODE_SETUP/cpgen.py" "$1"
 }
 cptest() {
-    python3 ~/Desktop/source/leetcode-setup/cptest.py "$@"
+    python3 "$LEETCODE_SETUP/cptest.py" "$@"
 }
 ```
 
