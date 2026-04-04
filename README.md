@@ -1,18 +1,43 @@
 # leetcode-setup
 
-## cpbuild <filename.cpp>
-While solving problems, you will inevitably run into "Segmentation Faults" (accessing arrays out of bounds) or weird integer overflows. 
+Competitive programming workflow for LeetCode in C++.
 
-A "debug" compilation command that catches these errors instantly and tells you exactly which line caused them:
+## Tools
+
+### `cpbuild <file.cpp>`
+Debug compilation with sanitizers and warnings.
 ```
-g++ -std=c++17 -DLOCAL -Wall -Wextra -Wshadow -fsanitize=address -fsanitize=undefined template.cpp -o solution
+cpbuild solve/930.cpp
+./solution
 ```
 
-Command is long to type every time. Create an alias by updating `~/.zshrc` file:
+### `cpgen <problem_number>`
+Fetch a LeetCode problem and generate `solve/<number>.cpp` with the template and method stub.
 ```
+cpgen 930
+```
+
+### `cptest <problem_number>`
+Compile and test your solution against LeetCode's example test cases.
+```
+cptest 930
+cptest 930 --refetch   # re-fetch test cases from LeetCode
+```
+Test cases are cached in `tests/<number>.json`.
+
+## Setup
+
+Add to `~/.zshrc`:
+```zsh
 cpbuild() {
     g++ -std=c++17 -DLOCAL -Wall -Wextra -Wshadow -fsanitize=address -fsanitize=undefined "$1" -o solution
     echo "Compiled $1 -> solution"
+}
+cpgen() {
+    python3 ~/Desktop/source/leetcode-setup/cpgen.py "$1"
+}
+cptest() {
+    python3 ~/Desktop/source/leetcode-setup/cptest.py "$@"
 }
 ```
 
