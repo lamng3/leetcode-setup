@@ -503,8 +503,28 @@ def normalize(s: str) -> str:
     return s
 
 
-def run_tests(problem_number: str):
+def fetch_only(problem_number: str):
+    """Fetch and cache test cases without running them."""
     data = load_or_fetch_tests(problem_number)
+    title = data["title"]
+    test_cases = data["testCases"]
+    print(f"\n\033[1m{problem_number}. {title}\033[0m")
+    print(f"Fetched {len(test_cases)} example test case(s)")
+    for i, tc in enumerate(test_cases):
+        print(f"  Test {i + 1}:")
+        print(f"    Input:    {tc['input_lines']}")
+        if tc.get("expected"):
+            print(f"    Expected: {tc['expected']}")
+
+
+def run_tests(problem_number: str):
+    test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
+    if not os.path.exists(test_file):
+        fetch_only(problem_number)
+        return
+
+    with open(test_file) as f:
+        data = json.load(f)
     meta = data["metaData"]
     test_cases = data["testCases"]
     title = data["title"]

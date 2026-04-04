@@ -18,10 +18,12 @@ cpgen 930
 ```
 
 ### `cptest <problem_number>`
-Compile and test your solution against LeetCode's example test cases.
+Fetch and test your solution against LeetCode's example test cases.
+- First run fetches and caches test cases (does not compile/run).
+- Subsequent runs compile and test against cached examples.
 ```
-cptest 930
-cptest 930 --refetch   # re-fetch test cases from LeetCode
+cptest 930              # fetch test cases (first time) or run tests
+cptest 930 --refetch    # re-fetch test cases from LeetCode
 ```
 Test cases are cached in `tests/<number>.json`.
 
