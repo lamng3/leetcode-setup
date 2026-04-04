@@ -35,37 +35,47 @@ class Solution {
 // LeetCode method function
 // void solve() {}
 public:
-    string decodeCiphertext(string encodedText, int rows) {
-        int n = (int)encodedText.size();
-        int cols = n/rows;
+    int splitArray(vi& nums, int k) {
+        int n = (int)nums.size();
 
-        string ans = "";
-        for (int i = 0; i < cols; i++) {
-            int r = 0, c = i;
-            while (r < rows && c < cols) {
-                ans += encodedText[r*cols+c];
-                r++;
-                c++;
-            }
+        ll L = 0, R = 0;
+        for (int x : nums) {
+            L = max(L, (ll)x);
+            R += x;
         }
 
-        while (!ans.empty() && ans.back() == ' ') ans.pop_back();
-        return ans;
+        while (L < R) {
+            ll X = L + (R - L) / 2;
+            int needed = 1;
+            ll run = 0;
+            for (int x : nums) {
+                run += x;
+                if (run > X) {
+                    needed += 1;
+                    run = x;
+                }
+            }
+            if (needed > k) L = X+1;
+            else R = X;
+        }
+
+        return L;
     }
 };
 
 #if defined(LOCAL) || defined(ONLINE_JUDGE)
 void preprocess() {
-    
+
 }
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    string encodedText; 
-    getline(cin, encodedText);
-    int rows; 
-    cin >> rows;
-    cout << Solution().decodeCiphertext(encodedText, rows) << '\n';
+    int n, k;
+    cin >> n;
+    vi nums(n);
+    REP(i, n) cin >> nums[i];
+    cin >> k;
+    cout << Solution().splitArray(nums, k) << '\n';
 }
 
 int main() {

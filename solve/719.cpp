@@ -35,37 +35,43 @@ class Solution {
 // LeetCode method function
 // void solve() {}
 public:
-    string decodeCiphertext(string encodedText, int rows) {
-        int n = (int)encodedText.size();
-        int cols = n/rows;
+    int smallestDistancePair(vi& nums, int k) {
+        int n = (int)nums.size();
+        sort(nums.begin(), nums.end());
 
-        string ans = "";
-        for (int i = 0; i < cols; i++) {
-            int r = 0, c = i;
-            while (r < rows && c < cols) {
-                ans += encodedText[r*cols+c];
-                r++;
-                c++;
+        int L = 0, R = 1e6;
+
+        while (L < R) {
+            int X = L + (R - L) / 2;
+            int count = 0;
+            int j = 0;
+            for (int i = 0; i < n; i++) {
+                while (nums[i] - nums[j] > X) {
+                    j++;
+                }
+                count += i - j;
             }
+            if (count < k) L = X + 1;
+            else R = X;
         }
 
-        while (!ans.empty() && ans.back() == ' ') ans.pop_back();
-        return ans;
+        return L;
     }
 };
 
 #if defined(LOCAL) || defined(ONLINE_JUDGE)
 void preprocess() {
-    
+
 }
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    string encodedText; 
-    getline(cin, encodedText);
-    int rows; 
-    cin >> rows;
-    cout << Solution().decodeCiphertext(encodedText, rows) << '\n';
+    int n, k;
+    cin >> n;
+    vi nums(n);
+    REP(i, n) cin >> nums[i];
+    cin >> k;
+    cout << Solution().smallestDistancePair(nums, k) << '\n';
 }
 
 int main() {
