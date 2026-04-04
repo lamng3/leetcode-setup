@@ -2,6 +2,8 @@
 
 Competitive programming workflow for LeetCode in C++.
 
+![demo](assets/demo.gif)
+
 ## Tools
 
 ### `cpbuild <file.cpp>`
