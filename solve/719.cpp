@@ -2,14 +2,40 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+#pragma region Debug
+#ifdef LOCAL
+template<typename T, typename U>
+ostream& operator<<(ostream& os, const pair<T,U>& p) {
+    return os << "(" << p.first << ", " << p.second << ")";
+}
 template<typename T>
 ostream& operator<<(ostream& os, const vector<T>& v) {
     os << "[";
-    for (int i = 0; i < v.size(); i++) {
-        os << v[i] << (i == v.size() - 1 ? "" : ", ");
-    }
+    for (int i = 0; i < (int)v.size(); i++) os << (i ? ", " : "") << v[i];
     return os << "]";
 }
+template<typename T>
+ostream& operator<<(ostream& os, const set<T>& s) {
+    os << "{";
+    int i = 0;
+    for (auto& x : s) os << (i++ ? ", " : "") << x;
+    return os << "}";
+}
+template<typename K, typename V>
+ostream& operator<<(ostream& os, const map<K,V>& m) {
+    os << "{";
+    int i = 0;
+    for (auto& [k, v] : m) os << (i++ ? ", " : "") << k << ": " << v;
+    return os << "}";
+}
+void _dbg() { cerr << endl; }
+template<typename T, typename... A>
+void _dbg(T t, A... a) { cerr << " " << t; if constexpr(sizeof...(a)) cerr << ","; _dbg(a...); }
+#define dbg(...) cerr << "\033[35m[" << #__VA_ARGS__ << "]\033[0m:", _dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#pragma endregion
 
 using ll = long long;
 using vi = vector<int>;
@@ -31,47 +57,47 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+// 719. Find K-th Smallest Pair Distance [Hard]
 class Solution {
-// LeetCode method function
-// void solve() {}
 public:
+    // count number of pairs distance X is greater or equal than
+    int count(const vi& nums, const int& X) {
+        int n = (int)nums.size();
+        int res = 0;
+        int L = 0;
+        for (int R = 0; R < n; R++) {
+            while (nums[R] - nums[L] > X) {
+                L++;
+            }
+            // [L..R] satisfies
+            res += R - L;
+        }
+        return res;
+    }
+
     int smallestDistancePair(vi& nums, int k) {
         int n = (int)nums.size();
         sort(nums.begin(), nums.end());
 
         int L = 0, R = 1e6;
-
         while (L < R) {
             int X = L + (R - L) / 2;
-            int count = 0;
-            int j = 0;
-            for (int i = 0; i < n; i++) {
-                while (nums[i] - nums[j] > X) {
-                    j++;
-                }
-                count += i - j;
-            }
-            if (count < k) L = X + 1;
+            int cnt = count(nums, X);
+            if (cnt < k) L = X+1;
             else R = X;
         }
-
         return L;
     }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
 void preprocess() {
-
+    
 }
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, k;
-    cin >> n;
-    vi nums(n);
-    REP(i, n) cin >> nums[i];
-    cin >> k;
-    cout << Solution().smallestDistancePair(nums, k) << '\n';
+    
 }
 
 int main() {
