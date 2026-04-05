@@ -2,14 +2,40 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+#pragma region Debug
+#ifdef LOCAL
+template<typename T, typename U>
+ostream& operator<<(ostream& os, const pair<T,U>& p) {
+    return os << "(" << p.first << ", " << p.second << ")";
+}
 template<typename T>
 ostream& operator<<(ostream& os, const vector<T>& v) {
     os << "[";
-    for (int i = 0; i < v.size(); i++) {
-        os << v[i] << (i == v.size() - 1 ? "" : ", ");
-    }
+    for (int i = 0; i < (int)v.size(); i++) os << (i ? ", " : "") << v[i];
     return os << "]";
 }
+template<typename T>
+ostream& operator<<(ostream& os, const set<T>& s) {
+    os << "{";
+    int i = 0;
+    for (auto& x : s) os << (i++ ? ", " : "") << x;
+    return os << "}";
+}
+template<typename K, typename V>
+ostream& operator<<(ostream& os, const map<K,V>& m) {
+    os << "{";
+    int i = 0;
+    for (auto& [k, v] : m) os << (i++ ? ", " : "") << k << ": " << v;
+    return os << "}";
+}
+void _dbg() { cerr << endl; }
+template<typename T, typename... A>
+void _dbg(T t, A... a) { cerr << " " << t; if constexpr(sizeof...(a)) cerr << ","; _dbg(a...); }
+#define dbg(...) cerr << "\033[35m[" << #__VA_ARGS__ << "]\033[0m:", _dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#pragma endregion
 
 using ll = long long;
 using vi = vector<int>;
@@ -38,7 +64,7 @@ public:
 
 };
 
-#if defined(LOCAL) || defined(ONLINE_JUDGE)
+#if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
 void preprocess() {
     
 }

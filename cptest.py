@@ -461,6 +461,18 @@ def generate_runner_cpp(solution_path: str, meta: dict, needs_tree: bool, needs_
     {printer}'''
 
     return f'''// Auto-generated test runner
+// Provide dbg() if the solution file doesn't define it
+#ifndef dbg
+#ifdef LOCAL
+#include <iostream>
+inline void _cptest_dbg() {{ std::cerr << std::endl; }}
+template<typename T, typename... A>
+void _cptest_dbg(T t, A... a) {{ std::cerr << " " << t; if constexpr(sizeof...(a)) std::cerr << ","; _cptest_dbg(a...); }}
+#define dbg(...) std::cerr << "\\033[35m[" << #__VA_ARGS__ << "]\\033[0m:", _cptest_dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#endif
 {defines}#include "{solution_path}"
 {PARSE_HELPERS}
 
@@ -517,7 +529,7 @@ def fetch_only(problem_number: str):
             print(f"    Expected: {tc['expected']}")
 
 
-def run_tests(problem_number: str):
+def run_tests(problem_number: str, test_index=None):
     test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
     if not os.path.exists(test_file):
         fetch_only(problem_number)
@@ -547,9 +559,9 @@ def run_tests(problem_number: str):
     binary_path = runner_path.replace('.cpp', '')
 
     try:
-        # Compile (same flags as cpbuild but without -DLOCAL)
+        # Compile — DLOCAL enables dbg(), DCPTEST suppresses solution's main()
         compile_cmd = [
-            "g++", "-std=c++17", "-O2",
+            "g++", "-std=c++17", "-DLOCAL", "-DCPTEST", "-O2",
             "-Wall", "-Wextra", "-Wshadow",
             "-fsanitize=address", "-fsanitize=undefined",
             runner_path, "-o", binary_path,
@@ -560,11 +572,18 @@ def run_tests(problem_number: str):
             print(result.stderr)
             return
 
+        # Select which tests to run
+        if test_index is not None and test_index <= len(test_cases):
+            run_cases = [(test_index - 1, test_cases[test_index - 1])]
+        else:
+            run_cases = list(enumerate(test_cases))
+
         print(f"\n\033[1m{problem_number}. {title}\033[0m")
-        print(f"Running {len(test_cases)} example test case(s)...\n")
+        label = f"test {test_index}" if len(run_cases) == 1 else f"{len(run_cases)} test(s)"
+        print(f"Running {label}...\n")
 
         passed = 0
-        for i, tc in enumerate(test_cases):
+        for i, tc in run_cases:
             stdin_data = "\n".join(tc["input_lines"]) + "\n"
             expected = tc.get("expected")
 
@@ -581,15 +600,24 @@ def run_tests(problem_number: str):
                 print(f"    Input:    {tc['input_lines']}")
                 continue
 
+            # Separate debug output (dbg) from sanitizer errors in stderr
+            debug_lines = []
+            error_lines = []
+            if proc.stderr:
+                for line in proc.stderr.splitlines():
+                    if "ERROR" in line or "runtime error" in line or "SUMMARY" in line:
+                        error_lines.append(line)
+                    else:
+                        debug_lines.append(line)
+
             if proc.returncode != 0:
                 print(f"  Test {i + 1}: \033[31mRTE\033[0m")
                 print(f"    Input:    {tc['input_lines']}")
-                if proc.stderr:
-                    # Show just the key error line from sanitizer output
-                    for line in proc.stderr.splitlines():
-                        if "ERROR" in line or "runtime error" in line:
-                            print(f"    Error:    {line.strip()}")
-                            break
+                if error_lines:
+                    print(f"    Error:    {error_lines[0].strip()}")
+                if debug_lines:
+                    for line in debug_lines:
+                        print(f"    Debug:    {line}")
                 continue
 
             actual = proc.stdout.strip()
@@ -598,9 +626,7 @@ def run_tests(problem_number: str):
                 print(f"  Test {i + 1}: \033[33m?\033[0m  (no expected output)")
                 print(f"    Input:    {tc['input_lines']}")
                 print(f"    Output:   {actual}")
-                continue
-
-            if normalize(actual) == normalize(expected):
+            elif normalize(actual) == normalize(expected):
                 passed += 1
                 print(f"  Test {i + 1}: \033[32mACCEPTED\033[0m")
                 print(f"    Input:    {tc['input_lines']}")
@@ -611,8 +637,12 @@ def run_tests(problem_number: str):
                 print(f"    Expected: {expected}")
                 print(f"    Output:   {actual}")
 
-        print(f"\n\033[1mResult: {passed}/{len(test_cases)} passed\033[0m")
-        if passed == len(test_cases):
+            if debug_lines:
+                for line in debug_lines:
+                    print(f"    Debug:    {line}")
+
+        print(f"\n\033[1mResult: {passed}/{len(run_cases)} passed\033[0m")
+        if passed == len(run_cases):
             print("\033[32mAll examples passed!\033[0m")
 
     finally:
@@ -624,8 +654,10 @@ def run_tests(problem_number: str):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: cptest <problem_number>")
-        print("       cptest <problem_number> --refetch  (re-fetch test cases)")
+        print("Usage: cptest <problem_number> [test_number]")
+        print("       cptest 930        (run all tests)")
+        print("       cptest 930 1      (run test 1 only)")
+        print("       cptest 930 --refetch")
         sys.exit(1)
 
     problem_number = sys.argv[1]
@@ -636,7 +668,14 @@ def main():
             os.unlink(test_file)
             print(f"Cleared cached test cases for {problem_number}")
 
-    run_tests(problem_number)
+    # Parse optional test index (second non-flag argument)
+    test_index = None
+    for arg in sys.argv[2:]:
+        if not arg.startswith("-") and arg.isdigit():
+            test_index = int(arg)
+            break
+
+    run_tests(problem_number, test_index)
 
 
 if __name__ == "__main__":
