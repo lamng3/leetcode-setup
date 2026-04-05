@@ -86,8 +86,7 @@ def get_problem(slug: str) -> dict:
 
 STRUCT_DEFS = {
     "TreeNode": """\
-#ifndef TREENODE_DEFINED
-#define TREENODE_DEFINED
+#ifdef LOCAL
 struct TreeNode {
     int val;
     TreeNode *left;
@@ -98,8 +97,7 @@ struct TreeNode {
 };
 #endif""",
     "ListNode": """\
-#ifndef LISTNODE_DEFINED
-#define LISTNODE_DEFINED
+#ifdef LOCAL
 struct ListNode {
     int val;
     ListNode *next;

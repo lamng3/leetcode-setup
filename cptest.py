@@ -309,8 +309,8 @@ vector<vector<string>> parse_vec_vec_string(const string& s) {
 
 // ── Tree / ListNode parsing ──────────────────────────────────────────
 #ifdef NEED_TREE
-#ifndef TREENODE_DEFINED
-#define TREENODE_DEFINED
+#ifndef LOCAL
+// Fallback for old solution files without struct definition
 struct TreeNode {
     int val;
     TreeNode *left;
@@ -370,8 +370,8 @@ void print_tree(TreeNode* root) {
 #endif
 
 #ifdef NEED_LISTNODE
-#ifndef LISTNODE_DEFINED
-#define LISTNODE_DEFINED
+#ifndef LOCAL
+// Fallback for old solution files without struct definition
 struct ListNode {
     int val;
     ListNode *next;
