@@ -66,16 +66,17 @@ public:
         int ans = 0;
         vi f(3, 0);
 
-        // fix L, for any L, find smallest R such that s[L..R] satisfies
-        int R = 0;
-        for (int L = 0; L < n; L++) {
-            while (R < n && !(f[0] > 0 && f[1] > 0 && f[2] > 0)) {
-                f[s[R]-'a']++;
-                R++;
+        // fix R, for any R, find smallest L < R such that s[L..R] satisfies
+        int L = 0;
+        REP(R, n) {
+            f[s[R]-'a']++;
+            // capture soft delete an item
+            while (f[0] > 0 && f[1] > 0 && f[2] > 0) {
+                f[s[L]-'a']--;
+                L++;
             }
             dbg(L, R);
-            ans += R - L + 1;
-            f[s[L]-'a']--;
+            ans += L;
         }
 
         return ans;
