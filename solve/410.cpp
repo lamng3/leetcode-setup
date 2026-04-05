@@ -2,14 +2,40 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+#pragma region Debug
+#ifdef LOCAL
+template<typename T, typename U>
+ostream& operator<<(ostream& os, const pair<T,U>& p) {
+    return os << "(" << p.first << ", " << p.second << ")";
+}
 template<typename T>
 ostream& operator<<(ostream& os, const vector<T>& v) {
     os << "[";
-    for (int i = 0; i < v.size(); i++) {
-        os << v[i] << (i == v.size() - 1 ? "" : ", ");
-    }
+    for (int i = 0; i < (int)v.size(); i++) os << (i ? ", " : "") << v[i];
     return os << "]";
 }
+template<typename T>
+ostream& operator<<(ostream& os, const set<T>& s) {
+    os << "{";
+    int i = 0;
+    for (auto& x : s) os << (i++ ? ", " : "") << x;
+    return os << "}";
+}
+template<typename K, typename V>
+ostream& operator<<(ostream& os, const map<K,V>& m) {
+    os << "{";
+    int i = 0;
+    for (auto& [k, v] : m) os << (i++ ? ", " : "") << k << ": " << v;
+    return os << "}";
+}
+void _dbg() { cerr << endl; }
+template<typename T, typename... A>
+void _dbg(T t, A... a) { cerr << " " << t; if constexpr(sizeof...(a)) cerr << ","; _dbg(a...); }
+#define dbg(...) cerr << "\033[35m[" << #__VA_ARGS__ << "]\033[0m:", _dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#pragma endregion
 
 using ll = long long;
 using vi = vector<int>;
@@ -31,13 +57,28 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+// 410. Split Array Largest Sum [Hard]
 class Solution {
-// LeetCode method function
-// void solve() {}
 public:
-    int splitArray(vi& nums, int k) {
+    int count(const vi& nums, const ll& X) {
         int n = (int)nums.size();
+        int needed = 1;
+        ll run = 0;
+        for (int x : nums) {
+            run += x;
+            if (run > X) {
+                needed += 1;
+                run = x;
+            }
+        }
+        return needed;
+    }
 
+    int splitArray(vi& nums, int k) {
+        /*
+            Let X be largest sum of any subarray
+            Question: Can nums be divided into k subarrays that sum of each subarray <= X?
+        */
         ll L = 0, R = 0;
         for (int x : nums) {
             L = max(L, (ll)x);
@@ -46,16 +87,8 @@ public:
 
         while (L < R) {
             ll X = L + (R - L) / 2;
-            int needed = 1;
-            ll run = 0;
-            for (int x : nums) {
-                run += x;
-                if (run > X) {
-                    needed += 1;
-                    run = x;
-                }
-            }
-            if (needed > k) L = X+1;
+            int cnt = count(nums, X);
+            if (cnt > k) L = X+1;
             else R = X;
         }
 
@@ -65,17 +98,12 @@ public:
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
 void preprocess() {
-
+    
 }
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, k;
-    cin >> n;
-    vi nums(n);
-    REP(i, n) cin >> nums[i];
-    cin >> k;
-    cout << Solution().splitArray(nums, k) << '\n';
+    
 }
 
 int main() {
