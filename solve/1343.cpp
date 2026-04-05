@@ -31,51 +31,30 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+// 1343. Number of Sub-arrays of Size K and Average Greater than or Equal to Threshold [Medium]
 class Solution {
-// LeetCode method function
-// void solve() {}
 public:
-    int splitArray(vi& nums, int k) {
-        int n = (int)nums.size();
-
-        ll L = 0, R = 0;
-        for (int x : nums) {
-            L = max(L, (ll)x);
-            R += x;
+    int numOfSubarrays(vi& arr, int k, int threshold) {
+        int n = (int)arr.size();
+        int target = threshold * k;
+        int ans = 0, run = 0;
+        for (int i = 0; i < n; i++) {
+            run += arr[i];
+            if (i >= k) run -= arr[i-k];
+            if (i >= k-1 && run >= target) ans++;
         }
-
-        while (L < R) {
-            ll X = L + (R - L) / 2;
-            int needed = 1;
-            ll run = 0;
-            for (int x : nums) {
-                run += x;
-                if (run > X) {
-                    needed += 1;
-                    run = x;
-                }
-            }
-            if (needed > k) L = X+1;
-            else R = X;
-        }
-
-        return L;
+        return ans;
     }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
 void preprocess() {
-
+    
 }
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, k;
-    cin >> n;
-    vi nums(n);
-    REP(i, n) cin >> nums[i];
-    cin >> k;
-    cout << Solution().splitArray(nums, k) << '\n';
+    
 }
 
 int main() {

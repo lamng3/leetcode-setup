@@ -54,7 +54,7 @@ public:
     }
 };
 
-#if defined(LOCAL) || defined(ONLINE_JUDGE)
+#if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
 void preprocess() {
     
 }
