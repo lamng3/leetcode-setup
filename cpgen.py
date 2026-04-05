@@ -84,6 +84,48 @@ def get_problem(slug: str) -> dict:
     return data["data"]["question"]
 
 
+STRUCT_DEFS = {
+    "TreeNode": """\
+#ifndef TREENODE_DEFINED
+#define TREENODE_DEFINED
+struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};
+#endif""",
+    "ListNode": """\
+#ifndef LISTNODE_DEFINED
+#define LISTNODE_DEFINED
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+#endif""",
+}
+
+
+def detect_structs(cpp_snippet: str) -> list:
+    """Detect which struct definitions are needed from the snippet."""
+    needed = []
+    for name in STRUCT_DEFS:
+        if name in cpp_snippet:
+            needed.append(name)
+    return needed
+
+
+def strip_definition_comments(cpp_snippet: str) -> str:
+    """Remove the commented-out struct definition blocks from the snippet."""
+    # Matches /** ... */ blocks that contain struct definitions
+    return re.sub(r'/\*\*\s*\n(\s*\*.*\n)*\s*\*/\s*\n?', '', cpp_snippet)
+
+
 def extract_method(cpp_snippet: str) -> str:
     """Extract the method signature and body placeholder from LeetCode's C++ snippet."""
     # Remove the outer class Solution { public: ... };
@@ -122,6 +164,15 @@ def generate(problem_number: str):
 
     method_body = extract_method(cpp_snippet)
 
+    # Detect needed struct definitions and clean up snippet
+    needed_structs = detect_structs(cpp_snippet)
+    clean_snippet = strip_definition_comments(cpp_snippet) if needed_structs else cpp_snippet
+
+    # Build struct definitions block
+    struct_block = ""
+    if needed_structs:
+        struct_block = "\n".join(STRUCT_DEFS[s] for s in needed_structs) + "\n\n"
+
     # Read template
     with open(TEMPLATE_PATH, "r") as f:
         template = f.read()
@@ -129,7 +180,7 @@ def generate(problem_number: str):
     # Replace the Solution class placeholder with the fetched one
     cpp = template.replace(
         "class Solution {\n// LeetCode method function\n// void solve() {}\npublic:\n\n};",
-        f"// {qid}. {title} [{difficulty}]\n{cpp_snippet}",
+        f"// {qid}. {title} [{difficulty}]\n{struct_block}{clean_snippet}",
     )
 
     out_path = os.path.join(SOLVE_DIR, f"{qid}.cpp")

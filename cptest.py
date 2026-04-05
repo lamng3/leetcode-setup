@@ -165,7 +165,9 @@ TYPE_MAP = {
     "list<boolean>":  ("vector<bool>",    "parse_vec_bool(line)"),
     "list<list<integer>>":("vector<vector<int>>", "parse_vec_vec_int(line)"),
     "list<list<string>>": ("vector<vector<string>>","parse_vec_vec_string(line)"),
+    "TreeNode":   ("TreeNode*",           "parse_tree(line)"),
     "TreeNode*":  ("TreeNode*",           "parse_tree(line)"),
+    "ListNode":   ("ListNode*",           "parse_listnode(line)"),
     "ListNode*":  ("ListNode*",           "parse_listnode(line)"),
 }
 
@@ -198,9 +200,9 @@ def cpp_printer(lc_type: str, expr: str) -> str:
         if inner == "boolean":
             return f'print_vec_bool({expr});'
         return f'print_vec({expr});'
-    if lc_type == "TreeNode*":
+    if lc_type in ("TreeNode", "TreeNode*"):
         return f'print_tree({expr});'
-    if lc_type == "ListNode*":
+    if lc_type in ("ListNode", "ListNode*"):
         return f'print_listnode({expr});'
     # fallback: use the template's operator<< for vectors, else raw cout
     return f'cout << {expr};'
@@ -300,11 +302,17 @@ vector<vector<string>> parse_vec_vec_string(const string& s) {
 
 // ── Tree / ListNode parsing ──────────────────────────────────────────
 #ifdef NEED_TREE
+#ifndef TREENODE_DEFINED
+#define TREENODE_DEFINED
 struct TreeNode {
     int val;
-    TreeNode *left, *right;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
 };
+#endif
 TreeNode* parse_tree(const string& s) {
     auto toks = tokenize_array(s);
     if (toks.empty() || toks[0] == "null") return nullptr;
@@ -355,11 +363,16 @@ void print_tree(TreeNode* root) {
 #endif
 
 #ifdef NEED_LISTNODE
+#ifndef LISTNODE_DEFINED
+#define LISTNODE_DEFINED
 struct ListNode {
     int val;
     ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
     ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
 };
+#endif
 ListNode* parse_listnode(const string& s) {
     auto v = parse_vec_int(s);
     ListNode dummy(0);
@@ -461,8 +474,7 @@ def generate_runner_cpp(solution_path: str, meta: dict, needs_tree: bool, needs_
     {printer}'''
 
     return f'''// Auto-generated test runner
-// Provide dbg() if the solution file doesn't define it
-#ifndef dbg
+// Provide dbg() fallback for old solution files without it
 #ifdef LOCAL
 #include <iostream>
 inline void _cptest_dbg() {{ std::cerr << std::endl; }}
@@ -472,8 +484,11 @@ void _cptest_dbg(T t, A... a) {{ std::cerr << " " << t; if constexpr(sizeof...(a
 #else
 #define dbg(...)
 #endif
-#endif
+// Solution may redefine dbg — allow it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmacro-redefined"
 {defines}#include "{solution_path}"
+#pragma GCC diagnostic pop
 {PARSE_HELPERS}
 
 int main() {{
