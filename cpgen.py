@@ -121,9 +121,11 @@ def detect_structs(cpp_snippet: str) -> list:
 
 
 def strip_definition_comments(cpp_snippet: str) -> str:
-    """Remove the commented-out struct definition blocks from the snippet."""
-    # Matches /** ... */ blocks that contain struct definitions
-    return re.sub(r'/\*\*\s*\n(\s*\*.*\n)*\s*\*/\s*\n?', '', cpp_snippet)
+    """Remove the commented-out struct definition blocks and usage comments."""
+    result = re.sub(r'/\*\*\s*\n(\s*\*.*\n)*\s*\*/\s*\n?', '', cpp_snippet)
+    # Collapse multiple blank lines into one
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    return result.strip()
 
 
 def extract_method(cpp_snippet: str) -> str:
@@ -166,7 +168,8 @@ def generate(problem_number: str):
 
     # Detect needed struct definitions and clean up snippet
     needed_structs = detect_structs(cpp_snippet)
-    clean_snippet = strip_definition_comments(cpp_snippet) if needed_structs else cpp_snippet
+    # Strip /** ... */ comment blocks (struct definitions + usage comments)
+    clean_snippet = strip_definition_comments(cpp_snippet)
 
     # Build struct definitions block
     struct_block = ""

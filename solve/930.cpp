@@ -2,14 +2,40 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+#pragma region Debug
+#ifdef LOCAL
+template<typename T, typename U>
+ostream& operator<<(ostream& os, const pair<T,U>& p) {
+    return os << "(" << p.first << ", " << p.second << ")";
+}
 template<typename T>
 ostream& operator<<(ostream& os, const vector<T>& v) {
     os << "[";
-    for (int i = 0; i < v.size(); i++) {
-        os << v[i] << (i == v.size() - 1 ? "" : ", ");
-    }
+    for (int i = 0; i < (int)v.size(); i++) os << (i ? ", " : "") << v[i];
     return os << "]";
 }
+template<typename T>
+ostream& operator<<(ostream& os, const set<T>& s) {
+    os << "{";
+    int i = 0;
+    for (auto& x : s) os << (i++ ? ", " : "") << x;
+    return os << "}";
+}
+template<typename K, typename V>
+ostream& operator<<(ostream& os, const map<K,V>& m) {
+    os << "{";
+    int i = 0;
+    for (auto& [k, v] : m) os << (i++ ? ", " : "") << k << ": " << v;
+    return os << "}";
+}
+void _dbg() { cerr << endl; }
+template<typename T, typename... A>
+void _dbg(T t, A... a) { cerr << " " << t; if constexpr(sizeof...(a)) cerr << ","; _dbg(a...); }
+#define dbg(...) cerr << "\033[35m[" << #__VA_ARGS__ << "]\033[0m:", _dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#pragma endregion
 
 using ll = long long;
 using vi = vector<int>;
@@ -34,24 +60,8 @@ const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 // 930. Binary Subarrays With Sum [Medium]
 class Solution {
 public:
-    int count(const vi& nums, const int& goal) {
-        if (goal < 0) return 0;
-        int n = (int)nums.size();
-        int res = 0, run = 0;
-        int L = 0;
-        for (int R = 0; R < n; R++) {
-            run += nums[R];
-            while (run > goal) {
-                run -= nums[L];
-                L++;
-            }
-            res += R - L + 1;
-        }
-        return res;
-    }
-
-    int numSubarraysWithSum(vi& nums, int goal) {
-        return count(nums, goal) - count(nums, goal-1);
+    int numSubarraysWithSum(vector<int>& nums, int goal) {
+        
     }
 };
 

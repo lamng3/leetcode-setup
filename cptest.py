@@ -78,22 +78,31 @@ def fetch_problem(slug: str) -> dict:
 def parse_expected_outputs(content_html: str) -> list[str]:
     """Extract expected outputs from the problem description HTML."""
     text = html.unescape(content_html)
-    # Match patterns like <strong>Output:</strong> VALUE or Output: VALUE
-    # Handle both <p> wrapped and <pre> wrapped formats
     outputs = []
 
-    # Pattern 1: <strong>Output:</strong> value (possibly wrapped in <code> or plain)
-    for m in re.finditer(r'<strong>\s*Output\s*:\s*</strong>\s*(?:<code>)?\s*(.+?)(?:</code>)?\s*(?:</p>|<br|</pre>|\n)', text, re.IGNORECASE):
+    # Pattern 1: <strong>Output:</strong> value on same line
+    for m in re.finditer(r'<strong>\s*Output\s*:?\s*</strong>\s*:?\s*(?:<code>)?\s*(.+?)(?:</code>)?\s*(?:</p>|<br|</pre>|\n)', text, re.IGNORECASE):
         val = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-        outputs.append(val)
+        if val:
+            outputs.append(val)
 
     if outputs:
         return outputs
 
-    # Pattern 2: Output: value on its own line (in <pre> blocks)
-    for m in re.finditer(r'Output\s*:\s*(.+)', text):
+    # Pattern 2: <strong>Output</strong> with value on next line
+    for m in re.finditer(r'<strong>\s*Output\s*:?\s*</strong>\s*:?\s*\n\s*(.+?)(?:\n|<)', text, re.IGNORECASE):
         val = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-        outputs.append(val)
+        if val:
+            outputs.append(val)
+
+    if outputs:
+        return outputs
+
+    # Pattern 3: Output: value on its own line (in <pre> blocks)
+    for m in re.finditer(r'Output\s*:?\s*(.+)', text):
+        val = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+        if val:
+            outputs.append(val)
 
     return outputs
 
@@ -116,8 +125,6 @@ def load_or_fetch_tests(problem_number: str) -> dict:
     inputs_list = problem["exampleTestcaseList"]
     expected_list = parse_expected_outputs(problem["content"])
 
-    # Each example's input has one line per parameter
-    num_params = len(meta["params"])
     test_cases = []
     for i, raw_input in enumerate(inputs_list):
         lines = raw_input.strip().splitlines()
@@ -504,13 +511,130 @@ int main() {{
 '''
 
 
+# ── Design problem runner ─────────────────────────────────────────────
+
+def is_design_problem(meta: dict) -> bool:
+    return "classname" in meta
+
+
+def generate_design_runner_cpp(solution_path: str, meta: dict, needs_tree: bool, needs_listnode: bool) -> str:
+    """Generate a C++ test runner for design (class-based) problems."""
+    classname = meta["classname"]
+    constructor = meta["constructor"]
+    methods = meta["methods"]
+
+    defines = ""
+    if needs_tree:
+        defines += "#define NEED_TREE\n"
+    if needs_listnode:
+        defines += "#define NEED_LISTNODE\n"
+
+    # Generate constructor argument parsing
+    ctor_params = constructor.get("params", [])
+    ctor_parse_lines = []
+    ctor_args = []
+    for j, p in enumerate(ctor_params):
+        ctype = cpp_type(p["type"])
+        pname = f"ctor_{p['name']}"
+        parser = cpp_parser(p["type"]).replace("line", f"ctor_toks[{j}]")
+        ctor_parse_lines.append(f'                {ctype} {pname} = {parser};')
+        ctor_args.append(pname)
+    ctor_parse = "\n".join(ctor_parse_lines)
+    ctor_call = ", ".join(ctor_args)
+
+    # Generate method dispatch
+    method_cases = []
+    for m in methods:
+        mname = m["name"]
+        mparams = m.get("params", [])
+        mret = m["return"]["type"]
+
+        # Parse args for this method
+        arg_parse_lines = []
+        arg_names = []
+        for j, p in enumerate(mparams):
+            ctype = cpp_type(p["type"])
+            pname = f"arg_{p['name']}"
+            parser = cpp_parser(p["type"]).replace("line", f"m_toks[{j}]")
+            arg_parse_lines.append(f'                {ctype} {pname} = {parser};')
+            arg_names.append(pname)
+        arg_parse = "\n".join(arg_parse_lines)
+        arg_call = ", ".join(arg_names)
+
+        if mret == "void":
+            case = f'''            if (methods[i] == "{mname}") {{
+                auto m_toks = tokenize_array(args_toks[i]);
+{arg_parse}
+                obj->{mname}({arg_call});
+                cout << "null";
+            }}'''
+        else:
+            printer_expr = cpp_printer(mret, "ret")
+            case = f'''            if (methods[i] == "{mname}") {{
+                auto m_toks = tokenize_array(args_toks[i]);
+{arg_parse}
+                {cpp_type(mret)} ret = obj->{mname}({arg_call});
+                {printer_expr}
+            }}'''
+        method_cases.append(case)
+
+    dispatch = " else ".join(method_cases)
+
+    return f'''// Auto-generated test runner (design problem)
+#ifdef LOCAL
+#include <iostream>
+inline void _cptest_dbg() {{ std::cerr << std::endl; }}
+template<typename T, typename... A>
+void _cptest_dbg(T t, A... a) {{ std::cerr << " " << t; if constexpr(sizeof...(a)) std::cerr << ","; _cptest_dbg(a...); }}
+#define dbg(...) std::cerr << "\\033[35m[" << #__VA_ARGS__ << "]\\033[0m:", _cptest_dbg(__VA_ARGS__)
+#else
+#define dbg(...)
+#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmacro-redefined"
+{defines}#include "{solution_path}"
+#pragma GCC diagnostic pop
+{PARSE_HELPERS}
+
+int main() {{
+    string methods_line, args_line;
+    getline(cin, methods_line);
+    getline(cin, args_line);
+
+    auto methods = parse_vec_string(methods_line);
+    auto args_toks = tokenize_array(args_line);
+
+    {classname}* obj = nullptr;
+    cout << "[";
+    for (int i = 0; i < (int)methods.size(); i++) {{
+        if (i) cout << ",";
+        if (methods[i] == "{classname}") {{
+            auto ctor_toks = tokenize_array(args_toks[i]);
+{ctor_parse}
+            obj = new {classname}({ctor_call});
+            cout << "null";
+        }} else {dispatch}
+    }}
+    cout << "]" << endl;
+    delete obj;
+    return 0;
+}}
+'''
+
+
 # ── Compilation and testing ───────────────────────────────────────────
 
 def needs_special_types(meta: dict) -> tuple[bool, bool]:
     """Check if TreeNode or ListNode are needed."""
     tree = False
     listnode = False
-    all_types = [p["type"] for p in meta["params"]] + [meta["return"]["type"]]
+    if is_design_problem(meta):
+        all_types = [p["type"] for p in meta.get("constructor", {}).get("params", [])]
+        for m in meta.get("methods", []):
+            all_types += [p["type"] for p in m.get("params", [])]
+            all_types.append(m["return"]["type"])
+    else:
+        all_types = [p["type"] for p in meta["params"]] + [meta["return"]["type"]]
     for t in all_types:
         if "TreeNode" in t:
             tree = True
@@ -562,9 +686,11 @@ def run_tests(problem_number: str, test_index=None):
         sys.exit(1)
 
     needs_tree, needs_listnode = needs_special_types(meta)
-    runner_code = generate_runner_cpp(
-        os.path.abspath(solution_path), meta, needs_tree, needs_listnode
-    )
+    abs_solution = os.path.abspath(solution_path)
+    if is_design_problem(meta):
+        runner_code = generate_design_runner_cpp(abs_solution, meta, needs_tree, needs_listnode)
+    else:
+        runner_code = generate_runner_cpp(abs_solution, meta, needs_tree, needs_listnode)
 
     # Write runner to temp file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.cpp', dir=SCRIPT_DIR, delete=False) as f:
@@ -594,7 +720,7 @@ def run_tests(problem_number: str, test_index=None):
             run_cases = list(enumerate(test_cases))
 
         print(f"\n\033[1m{problem_number}. {title}\033[0m")
-        label = f"test {test_index}" if len(run_cases) == 1 else f"{len(run_cases)} test(s)"
+        label = f"test {test_index}" if test_index is not None and len(run_cases) == 1 else f"{len(run_cases)} test(s)"
         print(f"Running {label}...\n")
 
         passed = 0
