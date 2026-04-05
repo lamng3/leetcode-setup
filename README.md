@@ -27,10 +27,12 @@ Fetch and test your solution against LeetCode's example test cases.
 ```
 cptest 930              # fetch (first time) or run all tests
 cptest 930 1            # run test 1 only
-cptest 930 2            # run test 2 only
+cptest 930 --add "[1,0,1]" "2" --expect "3"   # add a custom test case
 cptest 930 --refetch    # re-fetch test cases from LeetCode
 ```
 Test cases are cached in `tests/<number>.json`.
+
+> **Note:** Problems with TreeNode/ListNode types are under development.
 
 ## Setup
 

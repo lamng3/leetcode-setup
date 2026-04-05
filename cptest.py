@@ -652,11 +652,53 @@ def run_tests(problem_number: str, test_index=None):
                 os.unlink(p)
 
 
+def add_test_case(problem_number: str, args: list):
+    """Add a custom test case from CLI args.
+
+    Usage: cptest <num> --add <param1> <param2> ... --expect <expected>
+    """
+    test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
+    if not os.path.exists(test_file):
+        load_or_fetch_tests(problem_number)
+
+    with open(test_file) as f:
+        data = json.load(f)
+
+    meta = data["metaData"]
+    params = meta["params"]
+
+    # Split args at --expect
+    expected = None
+    input_args = args
+    if "--expect" in args:
+        idx = args.index("--expect")
+        input_args = args[:idx]
+        expected = args[idx + 1] if idx + 1 < len(args) else None
+
+    if len(input_args) != len(params):
+        print(f"Error: expected {len(params)} input(s), got {len(input_args)}")
+        print(f"  Params: {', '.join(p['name'] + ' (' + p['type'] + ')' for p in params)}")
+        print(f"  Usage:  cptest {problem_number} --add {' '.join('<' + p['name'] + '>' for p in params)} --expect <output>")
+        sys.exit(1)
+
+    data["testCases"].append({
+        "input_lines": input_args,
+        "expected": expected,
+    })
+
+    with open(test_file, "w") as f:
+        json.dump(data, f, indent=2)
+
+    tc_num = len(data["testCases"])
+    print(f"Added test {tc_num}: {input_args} -> {expected}")
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: cptest <problem_number> [test_number]")
-        print("       cptest 930        (run all tests)")
-        print("       cptest 930 1      (run test 1 only)")
+        print("       cptest 930            (run all tests)")
+        print("       cptest 930 1          (run test 1 only)")
+        print('       cptest 930 --add "[1,2]" "3" --expect "5"')
         print("       cptest 930 --refetch")
         sys.exit(1)
 
@@ -667,6 +709,12 @@ def main():
         if os.path.exists(test_file):
             os.unlink(test_file)
             print(f"Cleared cached test cases for {problem_number}")
+
+    if "--add" in sys.argv:
+        add_idx = sys.argv.index("--add")
+        add_args = sys.argv[add_idx + 1:]
+        add_test_case(problem_number, add_args)
+        return
 
     # Parse optional test index (second non-flag argument)
     test_index = None
