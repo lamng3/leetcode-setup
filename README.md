@@ -19,12 +19,15 @@ Fetch a LeetCode problem and generate `solve/<number>.cpp` with the template and
 cpgen 930
 ```
 
-### `cptest <problem_number>`
+### `cptest <problem_number> [test_number]`
 Fetch and test your solution against LeetCode's example test cases.
 - First run fetches and caches test cases (does not compile/run).
 - Subsequent runs compile and test against cached examples.
+- `dbg(...)` output is shown under each test result.
 ```
-cptest 930              # fetch test cases (first time) or run tests
+cptest 930              # fetch (first time) or run all tests
+cptest 930 1            # run test 1 only
+cptest 930 2            # run test 2 only
 cptest 930 --refetch    # re-fetch test cases from LeetCode
 ```
 Test cases are cached in `tests/<number>.json`.
