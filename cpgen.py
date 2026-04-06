@@ -142,7 +142,14 @@ def extract_method(cpp_snippet: str) -> str:
     return "\n".join(methods)
 
 
-def generate(problem_number: str):
+def get_output_dir(contest_type: str = None, contest_number: str = None) -> str:
+    """Get the output directory based on contest type and number."""
+    if contest_type and contest_number:
+        return os.path.join(SOLVE_DIR, contest_type, contest_number)
+    return SOLVE_DIR
+
+
+def generate(problem_number: str, contest_type: str = None, contest_number: str = None):
     print(f"Fetching problem {problem_number}...")
     slug = search_problem(problem_number)
     problem = get_problem(slug)
@@ -184,14 +191,15 @@ def generate(problem_number: str):
         f"// {qid}. {title} [{difficulty}]\n{struct_block}{clean_snippet}",
     )
 
-    out_path = os.path.join(SOLVE_DIR, f"{qid}.cpp")
+    out_dir = get_output_dir(contest_type, contest_number)
+    out_path = os.path.join(out_dir, f"{qid}.cpp")
     if os.path.exists(out_path):
         print(f"Warning: {out_path} already exists. Overwrite? [y/N] ", end="")
         if input().strip().lower() != "y":
             print("Aborted.")
             return
 
-    os.makedirs(SOLVE_DIR, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     with open(out_path, "w") as f:
         f.write(cpp)
 
@@ -199,13 +207,48 @@ def generate(problem_number: str):
     print(f"  {qid}. {title} [{difficulty}]")
 
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: cpgen <problem_number>")
-        print("  e.g. cpgen 930")
+def parse_contest_args(args: list) -> tuple:
+    """Parse contest flags from args. Returns (contest_type, contest_number, remaining_args)."""
+    contest_type = None
+    contest_number = None
+    remaining = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--weekly":
+            contest_type = "weekly"
+        elif args[i] == "--biweekly":
+            contest_type = "biweekly"
+        else:
+            remaining.append(args[i])
+        i += 1
+
+    if contest_type and len(remaining) >= 2:
+        contest_number = remaining[1]
+        remaining = [remaining[0]] + remaining[2:]
+    elif contest_type and len(remaining) < 2:
+        print(f"Error: --{contest_type} requires a contest number.")
+        print(f"  e.g. cpgen 930 --{contest_type} 400")
         sys.exit(1)
 
-    generate(sys.argv[1])
+    return contest_type, contest_number, remaining
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: cpgen <problem_number>")
+        print("       cpgen <problem_number> <contest_number> --weekly")
+        print("       cpgen <problem_number> <contest_number> --biweekly")
+        print("  e.g. cpgen 930")
+        print("  e.g. cpgen 930 400 --weekly")
+        sys.exit(1)
+
+    contest_type, contest_number, remaining = parse_contest_args(sys.argv[1:])
+
+    if not remaining:
+        print("Error: problem number is required.")
+        sys.exit(1)
+
+    generate(remaining[0], contest_type, contest_number)
 
 
 if __name__ == "__main__":

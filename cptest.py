@@ -654,6 +654,17 @@ def normalize(s: str) -> str:
     return s
 
 
+def find_solution(problem_number: str) -> str:
+    """Find the solution file: check cwd first, then default solve/ dir."""
+    cwd_path = os.path.join(os.getcwd(), f"{problem_number}.cpp")
+    if os.path.exists(cwd_path):
+        return cwd_path
+    default_path = os.path.join(SOLVE_DIR, f"{problem_number}.cpp")
+    if os.path.exists(default_path):
+        return default_path
+    return None
+
+
 def fetch_only(problem_number: str):
     """Fetch and cache test cases without running them."""
     data = load_or_fetch_tests(problem_number)
@@ -680,9 +691,10 @@ def run_tests(problem_number: str, test_index=None):
     test_cases = data["testCases"]
     title = data["title"]
 
-    solution_path = os.path.join(SOLVE_DIR, f"{problem_number}.cpp")
-    if not os.path.exists(solution_path):
-        print(f"Error: {solution_path} not found. Run cpgen {problem_number} first.")
+    solution_path = find_solution(problem_number)
+    if not solution_path:
+        print(f"Error: {problem_number}.cpp not found in current directory or {SOLVE_DIR}/.")
+        print(f"  Run cpgen {problem_number} first, or cd into the folder containing {problem_number}.cpp.")
         sys.exit(1)
 
     needs_tree, needs_listnode = needs_special_types(meta)
@@ -841,6 +853,9 @@ def main():
         print("       cptest 930 1          (run test 1 only)")
         print('       cptest 930 --add "[1,2]" "3" --expect "5"')
         print("       cptest 930 --refetch")
+        print()
+        print("  Looks for <number>.cpp in cwd first, then in solve/.")
+        print("  For contest problems, cd into solve/weekly/<n>/ or solve/biweekly/<n>/ first.")
         sys.exit(1)
 
     problem_number = sys.argv[1]

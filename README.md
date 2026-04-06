@@ -13,10 +13,12 @@ cpbuild solve/930.cpp
 ./solution
 ```
 
-### `cpgen <problem_number>`
-Fetch a LeetCode problem and generate `solve/<number>.cpp` with the template and method stub.
+### `cpgen <problem_number> [contest_number] [--weekly|--biweekly]`
+Fetch a LeetCode problem and generate a `.cpp` file with the template and method stub.
 ```
-cpgen 930
+cpgen 930                    # -> solve/930.cpp
+cpgen 930 400 --weekly       # -> solve/weekly/400/930.cpp
+cpgen 930 150 --biweekly     # -> solve/biweekly/150/930.cpp
 ```
 
 ### `cptest <problem_number> [test_number]`
@@ -24,11 +26,15 @@ Fetch and test your solution against LeetCode's example test cases.
 - First run fetches and caches test cases (does not compile/run).
 - Subsequent runs compile and test against cached examples.
 - `dbg(...)` output is shown under each test result.
+- Looks for `<number>.cpp` in cwd first, then in `solve/`. For contest problems, `cd` into the contest folder first.
 ```
 cptest 930              # fetch (first time) or run all tests
 cptest 930 1            # run test 1 only
 cptest 930 --add "[1,0,1]" "2" --expect "3"   # add a custom test case
 cptest 930 --refetch    # re-fetch test cases from LeetCode
+
+# Contest workflow
+cd solve/weekly/400 && cptest 930
 ```
 Test cases are cached in `tests/<number>.json`.
 
@@ -46,7 +52,7 @@ cpbuild() {
     echo "Compiled $1 -> solution"
 }
 cpgen() {
-    python3 "$LEETCODE_SETUP/cpgen.py" "$1"
+    python3 "$LEETCODE_SETUP/cpgen.py" "$@"
 }
 cptest() {
     python3 "$LEETCODE_SETUP/cptest.py" "$@"
