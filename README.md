@@ -20,7 +20,7 @@ cpgen 930                              # -> solve/930.cpp
 cpgen 930 496 --weekly                 # -> solve/weekly/496/930.cpp
 cpgen 930 150 --biweekly               # -> solve/biweekly/150/930.cpp
 cpgen 930 --upsolve                    # -> upsolve/930.cpp
-cpgen 930 496 --weekly --upsolve       # -> upsolve/weekly/496/930.cpp
+cpgen 3891 496 --weekly --upsolve       # -> upsolve/weekly/496/3891.cpp
 ```
 
 ### `cptest <problem_number> [test_number]`
