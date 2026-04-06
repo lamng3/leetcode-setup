@@ -11,6 +11,7 @@ import textwrap
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template.cpp")
 SOLVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "solve")
+UPSOLVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "upsolve")
 
 LEETCODE_GRAPHQL = "https://leetcode.com/graphql"
 
@@ -142,14 +143,15 @@ def extract_method(cpp_snippet: str) -> str:
     return "\n".join(methods)
 
 
-def get_output_dir(contest_type: str = None, contest_number: str = None) -> str:
-    """Get the output directory based on contest type and number."""
+def get_output_dir(contest_type: str = None, contest_number: str = None, upsolve: bool = False) -> str:
+    """Get the output directory based on contest type, number, and upsolve flag."""
+    base = UPSOLVE_DIR if upsolve else SOLVE_DIR
     if contest_type and contest_number:
-        return os.path.join(SOLVE_DIR, contest_type, contest_number)
-    return SOLVE_DIR
+        return os.path.join(base, contest_type, contest_number)
+    return base
 
 
-def generate(problem_number: str, contest_type: str = None, contest_number: str = None):
+def generate(problem_number: str, contest_type: str = None, contest_number: str = None, upsolve: bool = False):
     print(f"Fetching problem {problem_number}...")
     slug = search_problem(problem_number)
     problem = get_problem(slug)
@@ -191,7 +193,7 @@ def generate(problem_number: str, contest_type: str = None, contest_number: str 
         f"// {qid}. {title} [{difficulty}]\n{struct_block}{clean_snippet}",
     )
 
-    out_dir = get_output_dir(contest_type, contest_number)
+    out_dir = get_output_dir(contest_type, contest_number, upsolve)
     out_path = os.path.join(out_dir, f"{qid}.cpp")
     if os.path.exists(out_path):
         print(f"Warning: {out_path} already exists. Overwrite? [y/N] ", end="")
@@ -207,30 +209,31 @@ def generate(problem_number: str, contest_type: str = None, contest_number: str 
     print(f"  {qid}. {title} [{difficulty}]")
 
 
-def parse_contest_args(args: list) -> tuple:
-    """Parse contest flags from args. Returns (contest_type, contest_number, remaining_args)."""
+def parse_args(args: list) -> tuple:
+    """Parse flags from args. Returns (contest_type, contest_number, upsolve, remaining_args)."""
     contest_type = None
     contest_number = None
+    upsolve = False
     remaining = []
-    i = 0
-    while i < len(args):
-        if args[i] == "--weekly":
+    for arg in args:
+        if arg == "--weekly":
             contest_type = "weekly"
-        elif args[i] == "--biweekly":
+        elif arg == "--biweekly":
             contest_type = "biweekly"
+        elif arg == "--upsolve":
+            upsolve = True
         else:
-            remaining.append(args[i])
-        i += 1
+            remaining.append(arg)
 
     if contest_type and len(remaining) >= 2:
         contest_number = remaining[1]
         remaining = [remaining[0]] + remaining[2:]
     elif contest_type and len(remaining) < 2:
         print(f"Error: --{contest_type} requires a contest number.")
-        print(f"  e.g. cpgen 930 --{contest_type} 400")
+        print(f"  e.g. cpgen 930 496 --{contest_type}")
         sys.exit(1)
 
-    return contest_type, contest_number, remaining
+    return contest_type, contest_number, upsolve, remaining
 
 
 def main():
@@ -238,17 +241,17 @@ def main():
         print("Usage: cpgen <problem_number>")
         print("       cpgen <problem_number> <contest_number> --weekly")
         print("       cpgen <problem_number> <contest_number> --biweekly")
-        print("  e.g. cpgen 930")
-        print("  e.g. cpgen 930 400 --weekly")
+        print("       cpgen <problem_number> --upsolve")
+        print("       cpgen <problem_number> <contest_number> --weekly --upsolve")
         sys.exit(1)
 
-    contest_type, contest_number, remaining = parse_contest_args(sys.argv[1:])
+    contest_type, contest_number, upsolve, remaining = parse_args(sys.argv[1:])
 
     if not remaining:
         print("Error: problem number is required.")
         sys.exit(1)
 
-    generate(remaining[0], contest_type, contest_number)
+    generate(remaining[0], contest_type, contest_number, upsolve)
 
 
 if __name__ == "__main__":
