@@ -808,7 +808,8 @@ def run_tests(problem_number: str, test_index=None):
 def add_test_case(problem_number: str, args: list):
     """Add a custom test case from CLI args.
 
-    Usage: cptest <num> --add <param1> <param2> ... --expect <expected>
+    Usage (regular):  cptest <num> --add <param1> <param2> ... --expect <expected>
+    Usage (design):   cptest <num> --add <methods_array> <args_array> --expect <expected>
     """
     test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
     if not os.path.exists(test_file):
@@ -818,7 +819,7 @@ def add_test_case(problem_number: str, args: list):
         data = json.load(f)
 
     meta = data["metaData"]
-    params = meta["params"]
+    design = is_design_problem(meta)
 
     # Split args at --expect
     expected = None
@@ -828,11 +829,18 @@ def add_test_case(problem_number: str, args: list):
         input_args = args[:idx]
         expected = args[idx + 1] if idx + 1 < len(args) else None
 
-    if len(input_args) != len(params):
-        print(f"Error: expected {len(params)} input(s), got {len(input_args)}")
-        print(f"  Params: {', '.join(p['name'] + ' (' + p['type'] + ')' for p in params)}")
-        print(f"  Usage:  cptest {problem_number} --add {' '.join('<' + p['name'] + '>' for p in params)} --expect <output>")
-        sys.exit(1)
+    if design:
+        if len(input_args) != 2:
+            print(f"Error: design problem expects 2 inputs (methods array, args array), got {len(input_args)}")
+            print(f'  Usage:  cptest {problem_number} --add \'["Class","method",...]\' \'[[args],[args],...]\' --expect \'[null,...]\'')
+            sys.exit(1)
+    else:
+        params = meta["params"]
+        if len(input_args) != len(params):
+            print(f"Error: expected {len(params)} input(s), got {len(input_args)}")
+            print(f"  Params: {', '.join(p['name'] + ' (' + p['type'] + ')' for p in params)}")
+            print(f"  Usage:  cptest {problem_number} --add {' '.join('<' + p['name'] + '>' for p in params)} --expect <output>")
+            sys.exit(1)
 
     data["testCases"].append({
         "input_lines": input_args,
