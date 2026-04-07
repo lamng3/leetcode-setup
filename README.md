@@ -23,15 +23,17 @@ cpgen 930 --upsolve                    # -> upsolve/930.cpp
 cpgen 3891 496 --weekly --upsolve       # -> upsolve/weekly/496/3891.cpp
 ```
 
-### `cptest <problem_number> [test_number]`
+### `cptest <problem_number> [test_number] [--anyorder]`
 Fetch and test your solution against LeetCode's example test cases.
 - First run fetches and caches test cases (does not compile/run).
 - Subsequent runs compile and test against cached examples.
 - `dbg(...)` output is shown under each test result.
 - Looks for `<number>.cpp` in cwd first, then in `solve/`. `cd` into the right folder to test.
+- "Any order" problems are auto-detected from the problem description at fetch time. Use `--anyorder` to force it on manually.
 ```
 cptest 930              # fetch (first time) or run all tests
 cptest 930 1            # run test 1 only
+cptest 930 --anyorder   # order-independent comparison
 cptest 930 --add "[1,0,1]" "2" --expect "3"   # add a custom test case
 cptest 930 --refetch    # re-fetch test cases from LeetCode
 

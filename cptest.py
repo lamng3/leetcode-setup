@@ -766,7 +766,8 @@ def run_tests(problem_number: str, test_index=None, any_order=False):
 
         print(f"\n\033[1m{problem_number}. {title}\033[0m")
         label = f"test {test_index}" if test_index is not None and len(run_cases) == 1 else f"{len(run_cases)} test(s)"
-        print(f"Running {label}...\n")
+        order_note = " \033[36m(any order)\033[0m" if any_order else ""
+        print(f"Running {label}...{order_note}\n")
 
         passed = 0
         for i, tc in run_cases:
