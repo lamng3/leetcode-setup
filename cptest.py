@@ -136,7 +136,8 @@ def load_or_fetch_tests(problem_number: str) -> dict:
 
     # Detect "any order" from problem description
     content = problem["content"] or ""
-    any_order = bool(re.search(r'(return|answer).{0,30}in\s+any\s+order', content, re.IGNORECASE))
+    content_text = re.sub(r'<[^>]+>', ' ', content)
+    any_order = bool(re.search(r'(return|answer).{0,30}in\s+any\s+order', content_text, re.IGNORECASE))
 
     data = {
         "number": problem_number,

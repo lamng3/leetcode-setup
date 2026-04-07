@@ -62,16 +62,13 @@ class Solution {
 public:
     vii kClosest(vii& points, int k) {
         int n = (int)points.size();
-
         priority_queue<pii> pq;
         for (int i = 0; i < n; i++) {
             int x = points[i][0], y = points[i][1];
             int d = x * x + y * y;
-            dbg(i, d);
             pq.push({d, i});
             if (pq.size() > k) pq.pop();
         }
-
         vii ans;
         while (!pq.empty()) {
             auto [d, i] = pq.top();
