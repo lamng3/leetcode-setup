@@ -134,11 +134,16 @@ def load_or_fetch_tests(problem_number: str) -> dict:
         }
         test_cases.append(tc)
 
+    # Detect "any order" from problem description
+    content = problem["content"] or ""
+    any_order = bool(re.search(r'(return|answer).{0,30}in\s+any\s+order', content, re.IGNORECASE))
+
     data = {
         "number": problem_number,
         "title": problem["title"],
         "slug": problem["titleSlug"],
         "metaData": meta,
+        "anyOrder": any_order,
         "testCases": test_cases,
     }
 
@@ -654,6 +659,32 @@ def normalize(s: str) -> str:
     return s
 
 
+def normalize_any_order(s: str) -> str:
+    """Normalize then sort top-level array elements for order-independent comparison."""
+    s = normalize(s)
+    # Only sort if it's a top-level array like [elem,elem,...]
+    if s.startswith("[") and s.endswith("]"):
+        inner = s[1:-1]
+        # Tokenize top-level elements (respecting nested brackets)
+        elems = []
+        depth = 0
+        cur = ""
+        for c in inner:
+            if c in "([":
+                depth += 1
+            elif c in ")]":
+                depth -= 1
+            if c == "," and depth == 0:
+                elems.append(cur.strip())
+                cur = ""
+            else:
+                cur += c
+        if cur.strip():
+            elems.append(cur.strip())
+        return "[" + ",".join(sorted(elems)) + "]"
+    return s
+
+
 def find_solution(problem_number: str) -> str:
     """Find the solution file: check cwd first, then default solve/ dir."""
     cwd_path = os.path.join(os.getcwd(), f"{problem_number}.cpp")
@@ -679,7 +710,7 @@ def fetch_only(problem_number: str):
             print(f"    Expected: {tc['expected']}")
 
 
-def run_tests(problem_number: str, test_index=None):
+def run_tests(problem_number: str, test_index=None, any_order=False):
     test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
     if not os.path.exists(test_file):
         fetch_only(problem_number)
@@ -690,6 +721,8 @@ def run_tests(problem_number: str, test_index=None):
     meta = data["metaData"]
     test_cases = data["testCases"]
     title = data["title"]
+    # Auto-detect from cached flag, manual --anyorder overrides
+    any_order = any_order or data.get("anyOrder", False)
 
     solution_path = find_solution(problem_number)
     if not solution_path:
@@ -775,11 +808,13 @@ def run_tests(problem_number: str, test_index=None):
 
             actual = proc.stdout.strip()
 
+            cmp = normalize_any_order if any_order else normalize
+
             if expected is None:
                 print(f"  Test {i + 1}: \033[33m?\033[0m  (no expected output)")
                 print(f"    Input:    {tc['input_lines']}")
                 print(f"    Output:   {actual}")
-            elif normalize(actual) == normalize(expected):
+            elif cmp(actual) == cmp(expected):
                 passed += 1
                 print(f"  Test {i + 1}: \033[32mACCEPTED\033[0m")
                 print(f"    Input:    {tc['input_lines']}")
@@ -859,6 +894,7 @@ def main():
         print("Usage: cptest <problem_number> [test_number]")
         print("       cptest 930            (run all tests)")
         print("       cptest 930 1          (run test 1 only)")
+        print("       cptest 930 --anyorder (order-independent comparison)")
         print('       cptest 930 --add "[1,2]" "3" --expect "5"')
         print("       cptest 930 --refetch")
         print()
@@ -867,6 +903,7 @@ def main():
         sys.exit(1)
 
     problem_number = sys.argv[1]
+    any_order = "--anyorder" in sys.argv
 
     if "--refetch" in sys.argv:
         test_file = os.path.join(TESTS_DIR, f"{problem_number}.json")
@@ -887,7 +924,7 @@ def main():
             test_index = int(arg)
             break
 
-    run_tests(problem_number, test_index)
+    run_tests(problem_number, test_index, any_order)
 
 
 if __name__ == "__main__":
