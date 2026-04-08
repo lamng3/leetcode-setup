@@ -27,6 +27,7 @@ struct SRD {
 
     /* O(sqrt(n)) query for sum of [0,R) */
     T query(int R) {
+        if (R < 0) return 0;
         T res = 0;
         for (int i = 0; i < R/BLOCK_SIZE; i++) r += blocks[i];
         for (int i = (R/BLOCK_SIZE) * BLOCK_SIZE; i < R; i++) r += A[i];
