@@ -57,60 +57,11 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
-// 3655. XOR After Range Multiplication Queries II [Hard]
 class Solution {
+// LeetCode method function
+// void solve() {}
 public:
-    ll binpow(ll a, ll b) {
-        a %= MOD;
-        ll res = 1;
-        while (b) {
-            if (b % 2) res = (res * a) % MOD;
-            a = (a * a) % MOD;
-            b >>= 1;
-        }
-        return res;
-    }
 
-    ll modInverse(ll x) {
-        return binpow(x, MOD-2);
-    }
-
-    int xorAfterQueries(vi& nums, vii& queries) {
-        int n = (int)nums.size();
-
-        int sqrtn = ceil(sqrt(n));
-
-        vii M(sqrtn, vi(n, 1));
-
-        for (auto& q : queries) {
-            int L = q[0], R = q[1], k = q[2], v = q[3];
-            if (k >= sqrtn) {
-                for (int i = L; i <= R; i+=k) {
-                    nums[i] = ((ll)nums[i] * v) % MOD;
-                }
-            }
-            else {
-                M[k][L] = ((ll)M[k][L] * v) % MOD;
-                int invv = modInverse(v);
-                R = L + ((R-L)/k+1)*k;
-                if (R < n) M[k][R] = ((ll)M[k][R] * invv) % MOD;
-            }
-        }
-
-        for (int k = 1; k < sqrtn; k++) {
-            // prefix multiple
-            for (int i = k; i < n; i++) {
-                M[k][i] = ((ll)M[k][i] * M[k][i-k]) % MOD;
-            }
-            for (int i = 0; i < n; i++) {
-                nums[i] = ((ll)nums[i] * M[k][i]) % MOD;
-            }
-        }
-
-        int ans = 0;
-        for (int x : nums) ans ^= x;
-        return ans;
-    }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
@@ -120,7 +71,33 @@ void preprocess() {
 
 // cout << Solution().solve() << '\n';
 void solve() {
-    
+    int N; cin >> N;
+    vi A(N);
+    REP(i, N) cin >> A[i];
+
+    int sqrtN = ceil(sqrt(N));
+
+    vi dp(N, 1);
+    vii M(sqrtN, vi(N, 0));
+
+    for (int i = N-1; i >= 0; i--) {
+        if (A[i] >= sqrtN) {
+            for (int j = i+A[i]; j < N; j+=A[i]) {
+                dp[i] += dp[j];
+                dp[i] %= MOD_NTT;
+            }
+        }
+        else {
+            dp[i] += M[A[i]][i % A[i]];
+            dp[i] %= MOD_NTT;
+        }
+        for (int k = 1; k < sqrtN; k++) {
+            M[k][i % k] += dp[i];
+            M[k][i % k] %= MOD_NTT;
+        }
+    }
+
+    cout << dp[0] << '\n';
 }
 
 int main() {
