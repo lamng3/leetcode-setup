@@ -57,6 +57,32 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+template<class T> struct CoordinateCompressor {
+    vector<T> A; 
+    
+    CoordinateCompressor(vector<T>& arr) {
+        A = arr;
+        sort(A.begin(), A.end());
+        A.erase(unique(A.begin(), A.end()), A.end());
+        
+        for (auto& x : arr) {
+            x = lower_bound(A.begin(), A.end(), x) - A.begin();
+        }
+    }
+    
+    T value_at(int rank) const { 
+        return A[rank]; 
+    }
+    
+    int rank_of(T x) const { 
+        return lower_bound(A.begin(), A.end(), x) - A.begin(); 
+    }
+    
+    int size() const { 
+        return A.size(); 
+    }
+};
+
 struct Query {
     int L, R, threshold, id;
 };
@@ -76,12 +102,8 @@ public:
         }
 
         // coordinate compression
-        set<int> uq(nums.begin(), nums.end());
-        vi uqA(uq.begin(), uq.end());
-        map<int,int> rank;
-        REP(i, (int)uqA.size()) rank[uqA[i]] = i;
-        vi A(n);
-        REP(i, n) A[i] = rank[nums[i]];
+        vi A = nums;
+        CoordinateCompressor<int> cc(A);
 
         auto mo_cmp = [&](const Query& x, const Query& y) {
             int block_x = x.L / block_size;
@@ -127,7 +149,7 @@ public:
 
             // process answer
             auto& best = *st.begin();
-            ans[Q[i].id] = -best.fi >= threshold ? uqA[best.se] : -1;
+            ans[Q[i].id] = -best.fi >= threshold ? cc.value_at(best.se) : -1;
         }
 
         return ans;
