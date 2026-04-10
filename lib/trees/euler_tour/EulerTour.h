@@ -17,7 +17,7 @@ public:
         timer = 0;
     }
 
-    int dfs(int u, int p) {
+    void dfs(int u, int p) {
         S[u] = timer++;
         for (int v : g[u]) {
             if (v != p) {
