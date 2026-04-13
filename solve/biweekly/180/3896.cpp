@@ -57,11 +57,56 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
-class Solution {
-// LeetCode method function
-// void solve() {}
-public:
+const int MAXNUM = 1e5+5;
 
+vi isprime;
+vi primes, nonprimes;
+
+void sieve() {
+    isprime.assign(MAXNUM, 1);
+    primes.resize(MAXNUM);
+    nonprimes.resize(MAXNUM);
+    isprime[0] = isprime[1] = 0;
+    for (int p = 2; p * p < MAXNUM; p++) {
+        if (isprime[p]) {
+            for (int pp = p * p; pp < MAXNUM; pp += p) {
+                isprime[pp] = 0;
+            }
+        }
+    }
+    for (int p = 0; p < MAXNUM; p++) {
+        if (isprime[p]) {
+            primes.pb(p);
+        }
+        else {
+            nonprimes.pb(p);
+        }
+    }
+}
+
+// 3896. Minimum Operations to Transform Array into Alternating Prime [Medium]
+class Solution {
+public:
+    int minOperations(vi& nums) {
+        sieve();
+        int n = (int)nums.size();
+        int ans = 0;
+        for (int i = 0; i < n; i++) {
+            // binary search find closest number
+            int x = nums[i];
+            if (i % 2) { // non-prime
+                if (!isprime[x]) continue;
+                auto it = upper_bound(nonprimes.begin(), nonprimes.end(), x);
+                ans += *it - x;
+            }
+            else { // prime
+                if (isprime[x]) continue;
+                auto it = upper_bound(primes.begin(), primes.end(), x);
+                ans += *it - x;
+            }
+        }
+        return ans;
+    }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
@@ -69,100 +114,9 @@ void preprocess() {
     
 }
 
-struct BIT {
-    int n;
-    vector<ll> a, bit;
-
-    BIT(const vi& arr) {
-        n = (int)arr.size();
-        a.resize(n);
-        REP(i, n) a[i] = (ll)arr[i];
-        bit.assign(n+1, 0);
-        for (int i = 1; i <= n; i++) add(i, a[i-1]);
-    }
-
-    void update(int i, ll u) {
-        ll diff = u - a[i-1];
-        a[i-1] = u;
-        add(i, diff);
-    }
-
-    void add(int i, ll u) {
-        for (; i <= n; i += i & -i) bit[i] += u;
-    }
-
-    ll sum(int i) {
-        ll res = 0;
-        for (; i > 0; i -= i & -i) res += bit[i];
-        return res;
-    }
-
-    ll sum(int L, int R) {
-        if (L > R) return 0;
-        return sum(R) - sum(L-1);
-    }
-};
-
-vi S, E, sz;
-vi euler;
-int timer;
-void flatten(int u, int p, const vii& g, const vi& v) {
-    S[u] = timer++;
-    euler.pb(v[u]);
-    for (int x : g[u]) {
-        if (x != p) {
-            flatten(x, u, g, v);
-        }
-    }
-    E[u] = timer;
-    sz[S[u]] = E[u] - S[u];
-}
-
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, q; cin >> n >> q;
     
-    vi v(n);
-    REP(i, n) cin >> v[i];
-
-    vii g(n, vi());
-    REP(i, n-1) {
-        int a, b; cin >> a >> b;
-        --a; --b;
-        g[a].pb(b);
-        g[b].pb(a);
-    }
-
-    S.resize(n);
-    E.resize(n);
-    sz.resize(n);
-    euler.reserve(n);
-    timer = 0;
-
-    // flatten values
-    flatten(0, -1, g, v);
-
-    // dbg(S);
-    // dbg(E);
-    // dbg(sz);
-    // dbg(euler);
-
-    BIT bit(euler);
-
-    REP(i, q) {
-        int T; cin >> T;
-        if (T == 1) {
-            int s, x; cin >> s >> x;
-            --s;
-            bit.update(S[s]+1, x);
-        }
-        else if (T == 2) {
-            int s; cin >> s;
-            --s;
-            ll ans = bit.sum(S[s]+1, E[s]);
-            cout << ans << '\n';
-        }
-    }
 }
 
 int main() {

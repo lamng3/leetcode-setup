@@ -57,11 +57,66 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+// 3897. Maximum Value of Concatenated Binary Segments [Hard]
 class Solution {
-// LeetCode method function
-// void solve() {}
 public:
+    ll binpow(ll a, ll b) {
+        a %= MOD;
+        ll res = 1;
+        while (b > 0) {
+            if (b & 1) res = (res * a) % MOD;
+            a = (a * a) % MOD;
+            b >>= 1;
+        }
+        return res;
+    }
 
+    int maxValue(vi& nums1, vi& nums0) {
+        int n = (int)nums1.size();
+        // goal: frontload with 1s
+        // sort by minimum number of zeros
+
+        vector<pii> a(n);
+        REP(i, n) a[i] = {nums0[i], nums1[i]};
+
+        // less zeros, more ones
+        auto cmp = [&](const pii& A, const pii& B) {
+            int zA = A.fi, oA = A.se;
+            int zB = B.fi, oB = B.se;
+
+            // both are all 1s
+            if (zA == 0 && zB == 0) return oA > oB;
+
+            // all 1s always win
+            if (zA == 0) return true;
+            if (zB == 0) return false;
+
+            // more 1s frontload
+            if (oA != oB) return oA > oB;
+
+            // tied 1s then fewer 0s win
+            return zA < zB;
+        };
+        sort(a.begin(), a.end(), cmp);
+
+        ll ans = 0;
+        int digits = 0;
+
+        for (int i = 0; i < n; i++) {
+            dbg(a[i]);
+            int ones = a[i].se, zeros = a[i].fi;
+            int d = ones + zeros;
+
+            ll vones = (binpow(2, ones) - 1 + MOD) % MOD;
+            ll add = (vones * binpow(2, zeros)) % MOD;
+
+            ans = (ans * binpow(2, d)) % MOD;
+            ans = (ans + add) % MOD;
+        }
+
+        ans %= MOD;
+        return (int)ans;
+    }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
@@ -69,100 +124,9 @@ void preprocess() {
     
 }
 
-struct BIT {
-    int n;
-    vector<ll> a, bit;
-
-    BIT(const vi& arr) {
-        n = (int)arr.size();
-        a.resize(n);
-        REP(i, n) a[i] = (ll)arr[i];
-        bit.assign(n+1, 0);
-        for (int i = 1; i <= n; i++) add(i, a[i-1]);
-    }
-
-    void update(int i, ll u) {
-        ll diff = u - a[i-1];
-        a[i-1] = u;
-        add(i, diff);
-    }
-
-    void add(int i, ll u) {
-        for (; i <= n; i += i & -i) bit[i] += u;
-    }
-
-    ll sum(int i) {
-        ll res = 0;
-        for (; i > 0; i -= i & -i) res += bit[i];
-        return res;
-    }
-
-    ll sum(int L, int R) {
-        if (L > R) return 0;
-        return sum(R) - sum(L-1);
-    }
-};
-
-vi S, E, sz;
-vi euler;
-int timer;
-void flatten(int u, int p, const vii& g, const vi& v) {
-    S[u] = timer++;
-    euler.pb(v[u]);
-    for (int x : g[u]) {
-        if (x != p) {
-            flatten(x, u, g, v);
-        }
-    }
-    E[u] = timer;
-    sz[S[u]] = E[u] - S[u];
-}
-
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, q; cin >> n >> q;
     
-    vi v(n);
-    REP(i, n) cin >> v[i];
-
-    vii g(n, vi());
-    REP(i, n-1) {
-        int a, b; cin >> a >> b;
-        --a; --b;
-        g[a].pb(b);
-        g[b].pb(a);
-    }
-
-    S.resize(n);
-    E.resize(n);
-    sz.resize(n);
-    euler.reserve(n);
-    timer = 0;
-
-    // flatten values
-    flatten(0, -1, g, v);
-
-    // dbg(S);
-    // dbg(E);
-    // dbg(sz);
-    // dbg(euler);
-
-    BIT bit(euler);
-
-    REP(i, q) {
-        int T; cin >> T;
-        if (T == 1) {
-            int s, x; cin >> s >> x;
-            --s;
-            bit.update(S[s]+1, x);
-        }
-        else if (T == 2) {
-            int s; cin >> s;
-            --s;
-            ll ans = bit.sum(S[s]+1, E[s]);
-            cout << ans << '\n';
-        }
-    }
 }
 
 int main() {

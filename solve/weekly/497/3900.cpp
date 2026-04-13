@@ -57,11 +57,65 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
+// 3900. Longest Balanced Substring After One Swap [Medium]
 class Solution {
-// LeetCode method function
-// void solve() {}
 public:
+    int find(const string& s) {
+        int n = (int)s.size();
 
+        int res = 0;
+
+        map<int,vi> mp;
+        mp[1].pb(-1);
+
+        vi pref(n);
+        pref[0] = s[0] - '0';
+        for (int i = 1; i < n; i++) pref[i] = pref[i-1] + (s[i] - '0');
+
+        int ones = pref[n-1];
+        int zeros = n - pref[n-1];
+
+        for (int R = 0; R < n; R++) {
+            int x = 2 * pref[R] - R;
+
+            // d = 2: more zeros than ones
+            // d = -2: more ones than zeros
+            for (int d : {0, -2, 2}) {
+                if (mp.count(x+d)) {
+                    for (int L : mp[x+d]) {
+                        int in_ones = pref[R] - (L == -1 ? 0 : pref[L]);
+                        int in_zeros = R - L - in_ones;
+
+                        // verify that a swap is possible
+                        int rones = ones - in_ones;
+                        int rzeros = zeros - in_zeros;
+
+                        // check if there are zeros and ones outside [L..R] to swap
+                        bool ok = (d == 0) || (d == 2 && rones > 0) || (d == -2 && rzeros > 0);
+                        if (ok) {
+                            res = max(res, R - L);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            mp[x].pb(R);
+        }
+
+        return res;
+    }
+
+    int longestBalanced(string s) {
+        // perform 1 swap: best to swap 1 to 0 or 0 to 1
+        // if (i,j) belongs to a longest substring, it wont affect the balancedness
+        // 2 * pref[R] - R = 2 * pref[L-1] - (L-1)
+
+        // [L..R] we can find substrings differ by at most 1
+        // pick [L..R] such that 2 * (pref[R] - pref[L-1]) = (R - L + 1) - 2
+        // 2 * pref[R] - R + 2 = 2 * pref[L-1] - (L-1)
+        return find(s);
+    }
 };
 
 #if !defined(CPTEST) && (defined(LOCAL) || defined(ONLINE_JUDGE))
@@ -69,100 +123,9 @@ void preprocess() {
     
 }
 
-struct BIT {
-    int n;
-    vector<ll> a, bit;
-
-    BIT(const vi& arr) {
-        n = (int)arr.size();
-        a.resize(n);
-        REP(i, n) a[i] = (ll)arr[i];
-        bit.assign(n+1, 0);
-        for (int i = 1; i <= n; i++) add(i, a[i-1]);
-    }
-
-    void update(int i, ll u) {
-        ll diff = u - a[i-1];
-        a[i-1] = u;
-        add(i, diff);
-    }
-
-    void add(int i, ll u) {
-        for (; i <= n; i += i & -i) bit[i] += u;
-    }
-
-    ll sum(int i) {
-        ll res = 0;
-        for (; i > 0; i -= i & -i) res += bit[i];
-        return res;
-    }
-
-    ll sum(int L, int R) {
-        if (L > R) return 0;
-        return sum(R) - sum(L-1);
-    }
-};
-
-vi S, E, sz;
-vi euler;
-int timer;
-void flatten(int u, int p, const vii& g, const vi& v) {
-    S[u] = timer++;
-    euler.pb(v[u]);
-    for (int x : g[u]) {
-        if (x != p) {
-            flatten(x, u, g, v);
-        }
-    }
-    E[u] = timer;
-    sz[S[u]] = E[u] - S[u];
-}
-
 // cout << Solution().solve() << '\n';
 void solve() {
-    int n, q; cin >> n >> q;
     
-    vi v(n);
-    REP(i, n) cin >> v[i];
-
-    vii g(n, vi());
-    REP(i, n-1) {
-        int a, b; cin >> a >> b;
-        --a; --b;
-        g[a].pb(b);
-        g[b].pb(a);
-    }
-
-    S.resize(n);
-    E.resize(n);
-    sz.resize(n);
-    euler.reserve(n);
-    timer = 0;
-
-    // flatten values
-    flatten(0, -1, g, v);
-
-    // dbg(S);
-    // dbg(E);
-    // dbg(sz);
-    // dbg(euler);
-
-    BIT bit(euler);
-
-    REP(i, q) {
-        int T; cin >> T;
-        if (T == 1) {
-            int s, x; cin >> s >> x;
-            --s;
-            bit.update(S[s]+1, x);
-        }
-        else if (T == 2) {
-            int s; cin >> s;
-            --s;
-            ll ans = bit.sum(S[s]+1, E[s]);
-            cout << ans << '\n';
-        }
-    }
 }
 
 int main() {

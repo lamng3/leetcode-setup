@@ -57,69 +57,21 @@ const ll LLINF = 2e18;
 const int MOD = 1e9+7;
 const int MOD_NTT = 998244353; // number theoretic transform (NTT)
 
-struct Query {
-    int L, R, id;
-};
-
-// 1906. Minimum Absolute Difference Queries [Medium]
+// 3741. Minimum Distance Between Three Equal Elements II [Medium]
 class Solution {
 public:
-    vi minDifference(vi& nums, vii& queries) {
-        int n = (int)nums.size(), m = (int)queries.size();
-        int sqrtn = ceil(sqrt(n));
-
-        vector<Query> Q(m);
-        for (int i = 0; i < m; i++) {
-            int L = queries[i][0], R = queries[i][1];
-            Q[i] = {L, R, i};
-        }
-
-        auto mo_cmp = [&](const Query& x, const Query& y) {
-            int block_x = x.L / sqrtn;
-            int block_y = y.L / sqrtn;
-            if (block_x != block_y) return block_x < block_y;
-            return (block_x % 2) ? x.R < y.R : x.R > y.R;
-        };
-        sort(Q.begin(), Q.end(), mo_cmp);
-
-        int f[101] = {0};
-
-        auto remove = [&](int i) {
-            f[nums[i]]--;
-        };
-
-        auto add = [&](int i) {
-            f[nums[i]]++;
-        };
-
-        vi ans(m);
-
-        // empty window size: mo_R - mo_L + 1 = 0
-        int mo_L = 0, mo_R = -1;
-
-        for (int i = 0; i < m; i++) {
-            int L = Q[i].L, R = Q[i].R;
-
-            // expand
-            while (mo_L > L) add(--mo_L);
-            while (mo_R < R) add(++mo_R);
-
-            // shrink
-            while (mo_L < L) remove(mo_L++);
-            while (mo_R > R) remove(mo_R--);
-
-            int min_diff = INF;
-            int prev = -1;
-            for (int v = 1; v <= 100; v++) {
-                if (f[v] > 0) {
-                    if (prev != -1) min_diff = min(min_diff, v - prev);
-                    prev = v;
-                }
+    int minimumDistance(vi& nums) {
+        int n = (int)nums.size();
+        vector<pii> a(n);
+        REP(i, n) a[i] = {nums[i], i};
+        sort(a.begin(), a.end());
+        int ans = INF;
+        for (int i = 2; i < n; i++) {
+            if (a[i].fi == a[i-2].fi) {
+                ans = min(ans, 2 * (a[i].se - a[i-2].se));
             }
-            ans[Q[i].id] = min_diff == INF ? -1 : min_diff;
         }
-
-        return ans;
+        return ans == INF ? -1 : ans;
     }
 };
 
