@@ -103,7 +103,7 @@ public:
 
         for (int i = n-1; i >= 0; i--) {
             int merged = 0;
-            for (int j = 0; j < n; j++) {
+            REP(j, n) {
                 if (i == j) continue;
                 merged += dsu.unite(edges[j][0], edges[j][1]);
             }
