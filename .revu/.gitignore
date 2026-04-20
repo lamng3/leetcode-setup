@@ -1,0 +1,3 @@
+# revu: keep local drafts out of git
+*
+!.gitignore
